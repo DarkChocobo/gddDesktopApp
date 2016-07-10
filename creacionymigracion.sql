@@ -154,6 +154,7 @@ CREATE TABLE GROUP_APROVED.Compras(
 
 )
 
+CREATE INDEX COMP1 ON GROUP_APROVED.Compras (Compra_Fecha, Publicacion_Cod, Id_Usuario)
 
 CREATE TABLE GROUP_APROVED.Calificaciones(
 	Calif_Cod numeric(18,0) PRIMARY KEY IDENTITY(15185,1),
@@ -164,7 +165,7 @@ CREATE TABLE GROUP_APROVED.Calificaciones(
 )
 
 
-SET IDENTITY_INSERT GROUP_APROVED.Calificaciones ON
+
 
 
 
@@ -483,6 +484,8 @@ end;
 
 
 go
+
+
 Create procedure GROUP_APROVED.migrComprasCalif
 as
 begin 
@@ -490,10 +493,10 @@ begin
 	declare @Calificacion_Descripcion nvarchar(255);
 	declare @Compra_Fecha datetime;
 	declare @Id_Usr INT;
-	declare @Cli_Dni numeric(18,0);
+	declare @Cli_Dni numeric(18,0),@Id_Compra numeric(18,0);
 	declare cursorCompCalif cursor for
 	select Calificacion_Codigo, Calificacion_Cant_Estrellas, Calificacion_Descripcion, Compra_Fecha, Compra_Cantidad,Publicacion_Cod, Cli_Dni from gd_esquema.Maestra  where Compra_Fecha is not null
-	order by 6,5,4
+	order by 6 asc,4 asc ,5 asc 
 	open cursorCompCalif;
 
 	fetch next from cursorCompCalif into @Calificacion_Codigo , @Calificacion_Cant_Estrellas, @Calificacion_Descripcion, @Compra_Fecha, @Compra_Cantidad, @Publicacion_Cod, @Cli_Dni
@@ -503,26 +506,28 @@ begin
 		
 		set @Id_Usr = (select Id_Usuario from GROUP_APROVED.Clientes where Dni_Cli = @Cli_Dni );
 
-		if (select 1 from GROUP_APROVED.Compras WHERE Publicacion_Cod = @Publicacion_Cod and Compra_Fecha = @Compra_Fecha and Compra_Cantidad = @Compra_Cantidad and Id_Usuario = @Id_Usr) <> 1 
+		if not exists (select 1 from GROUP_APROVED.Compras WHERE Publicacion_Cod = @Publicacion_Cod and Compra_Fecha = @Compra_Fecha and Compra_Cantidad = @Compra_Cantidad and Id_Usuario = @Id_Usr)
 		begin
 
 		insert into GROUP_APROVED.Compras(Compra_Fecha,Compra_Cantidad,Id_Usuario,Publicacion_Cod)
 				VALUES (@Compra_Fecha,@Compra_Cantidad,@Id_Usr,@Publicacion_Cod)
-				set @Publicacion_Cod  = (select max(ID_Compra) from GROUP_APROVED.Compras);  /*el id de publ pasa a ser id de compra a medios de minimizar y reutilizar variables*/
+				set @Id_Compra  = (select max(ID_Compra) from GROUP_APROVED.Compras);  
 
+		end;
+		
 
 		if @Calificacion_Codigo is not null
 			begin 
 				   
 				set @Calificacion_Cant_Estrellas = @Calificacion_Cant_Estrellas/2;
 				insert into GROUP_APROVED.Calificaciones(Calif_Cod, Calif_Cant_Est, Calif_Descr, ID_Compra)
-				values(@Calificacion_Codigo, @Calificacion_Cant_Estrellas, @Calificacion_Descripcion, @Publicacion_Cod);
+				values(@Calificacion_Codigo, @Calificacion_Cant_Estrellas, @Calificacion_Descripcion, @Id_Compra);
 
 
 
 			end;
 			
-		end;
+		
 
 		fetch next from cursorCompCalif into @Calificacion_Codigo , @Calificacion_Cant_Estrellas, @Calificacion_Descripcion, @Compra_Fecha, @Compra_Cantidad, @Publicacion_Cod, @Cli_Dni;
 	end;
@@ -1196,6 +1201,9 @@ begin
 
 			fetch next from cursorSubs into @publCod,@visCod,@usrId,@estado,@fechaVenc;
 		end;
+		
+	close cursorSubs;
+	deallocate cursorSubs;
 end;
 
 
@@ -1340,6 +1348,8 @@ go*/
 
 
 		/*compras y calificaciones */
+
+SET IDENTITY_INSERT GROUP_APROVED.Calificaciones ON
 
 exec GROUP_APROVED.migrComprasCalif
 
