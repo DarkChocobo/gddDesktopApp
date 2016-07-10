@@ -1182,6 +1182,8 @@ begin
 	WHILE @@FETCH_STATUS = 0
 		begin
 			
+			if not exists (select 1 from GROUP_APROVED.Compras WHERE Publicacion_Cod = @publCod)
+			begin
 
 			select top 1 @monto = Oferta_Monto, @comprador = Id_Usuario from GROUP_APROVED.Ofertas where Publicacion_Cod = @publCod order by Oferta_Monto desc;
 
@@ -1198,6 +1200,7 @@ begin
 
 			insert into GROUP_APROVED.Items (Nro_Fact,Nro_item,Item_Monto,Item_Cantidad,Item_Tipo)
 			values ( @FactNro, 1 , @monto, 1,'venta')
+			end;
 
 			fetch next from cursorSubs into @publCod,@visCod,@usrId,@estado,@fechaVenc;
 		end;
