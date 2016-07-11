@@ -138,7 +138,7 @@ go*/
 CREATE TABLE GROUP_APROVED.Ofertas (												/* se debe restringir que solo las publicaicones de tipo subasta tienen ofertas asignadas*/
 	ID_Oferta numeric(18,0) IDENTITY(1,1) PRIMARY KEY,
 	Oferta_Fecha datetime,
-	Oferta_Monto numeric(18,2),
+	Oferta_Monto numeric(18,0),
 	Id_Usuario INT REFERENCES GROUP_APROVED.Usuarios,
 	Publicacion_Cod INT REFERENCES GROUP_APROVED.Publicaciones
 	
