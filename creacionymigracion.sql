@@ -95,8 +95,7 @@ CREATE TABLE GROUP_APROVED.Visibilidades(
 	Visibilidad_Precio numeric(18,2),
 	Visibilidad_Porcentaje numeric(18,2),
 	Visibilidad_Costo_Envio numeric(18,2) default 100,
-	/*Visibilidad_Admite_Envio smallint default 0,      este campo no resulta necesario, cada publicacion indica si acepta o no  */        
-	
+	Visibilidad_Costo_Venta numeric(18,2) default 50,
 )
 
 
@@ -1185,14 +1184,15 @@ begin
 			if not exists (select 1 from GROUP_APROVED.Compras WHERE Publicacion_Cod = @publCod)
 			begin
 
-			select top 1 @monto = Oferta_Monto, @comprador = Id_Usuario from GROUP_APROVED.Ofertas where Publicacion_Cod = @publCod order by Oferta_Monto desc;
+			select top 1 @comprador = Id_Usuario from GROUP_APROVED.Ofertas where Publicacion_Cod = @publCod order by Oferta_Monto desc;
 
 			insert into GROUP_APROVED.Compras(Compra_Fecha,Compra_Cantidad,Id_Usuario,Publicacion_Cod)
 			values(@fechaVenc,1,@comprador,@publCod);
 
 			select @IdCompra = ID_Compra from GROUP_APROVED.Compras WHERE Publicacion_Cod = @publCod
 
-
+			select @monto = Visibilidad_Costo_Venta from  GROUP_APROVED.Visibilidades WHERE Visibilidad_Cod = @visCod
+			
 			insert into GROUP_APROVED.Facturas(Fact_Fecha, Fact_Forma_Pago,Id_Compra, Publicacion_Cod,Fact_Total)
 			values(@fechaVenc,'Efectivo',@IdCompra, @publCod,@monto)
 
